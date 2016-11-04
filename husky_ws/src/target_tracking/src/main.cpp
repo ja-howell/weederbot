@@ -10,15 +10,36 @@
 
 #include <cv_bridge/cv_bridge.h>
 
+#include <axis_camera/Axis.h>
+
 using namespace std;
 using namespace cv;
 using namespace ros;
+
+double lex;
+double ley;
+
+double dex;
+double dey;
+
+double iex;
+double iey;
+
+double kpx = 0.01;
+double kix = 0.001;
+double kdx = 0.01;
+
+double kpy = 0.01;
+double kiy = 0.001;
+double kdy = 0.01;
 
 int thresh = 100;
 int max_thresh = 255;
 RNG rng(12345);
 
 image_transport::Publisher image_pub;
+ros::Publisher camera_ctl;
+axis_camera::Axis cam_msg;
 
 void targetDetect(Mat &);
 
@@ -42,6 +63,16 @@ int main(int argc, char **argv) {
   init(argc, argv, "target_tracker");
   NodeHandle n;
 
+  camera_ctl = n.advertise<axis_camera::Axis>("axis/cmd", 1);
+
+  cam_msg.pan = 0;
+  cam_msg.tilt = 0;
+  cam_msg.zoom = 0;
+  cam_msg.brightness = 5000;
+  cam_msg.autofocus = true;
+
+  camera_ctl.publish(cam_msg);
+
   image_transport::ImageTransport it(n);
   image_transport::Subscriber image_topic = it.subscribe("axis/image_raw_out", 1, imageCallback);
   image_pub = it.advertise("axis/image_marked", 1);
@@ -59,6 +90,35 @@ float mag(Point a)
 Point midpoint(Point a, Point b) {
   return Point((a.x + b.x)/ 2.0, (a.y+b.y)/2.0);
 }
+
+void moveCamera(vector<Point> &corners) {
+  if(corners.size() != 4) return;
+
+  Point c = midpoint(corners[0], corners[2]);
+
+  double ex = c.x - (1280.0 / 2.0);
+  double ey = -(c.y - (720.0 / 2.0));
+
+  iex += ex;
+  dex = ex - lex;
+  lex = ex;
+
+  iey += ey;
+  dey = ey - ley;
+  ley = ey;
+
+  double pan = ex * kpx + iex * kix + dex * kdx;
+  double tilt = ey * kpy + iey * kiy + dey * kdy;
+
+  cam_msg.pan = pan;
+  cam_msg.tilt = tilt;
+
+  cout << ex << " " << iex << " " << dex << " " << pan << endl;
+  cout << ey << " " << iey << " " << dey<< " " << tilt << endl;
+
+  camera_ctl.publish(cam_msg);
+}
+
 
 void targetDetect(Mat &image)
 {
@@ -131,8 +191,10 @@ void targetDetect(Mat &image)
     line(image, midpoint(target[1], target[2]), midpoint(target[0], target[3]), Scalar(0, 0, 255));
   }
 
+  //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
+  //image_pub.publish(msg);
 
-  sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
-  image_pub.publish(msg);
+  if(targets.size() != 0)
+    moveCamera(targets[0]);
 }
 
