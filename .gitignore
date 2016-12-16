@@ -1,0 +1,7 @@
+# Ignore catkin generated files
+husky_ws/build/
+husky_ws/devel/
+
+# Ingore swap files
+*.swp
+
