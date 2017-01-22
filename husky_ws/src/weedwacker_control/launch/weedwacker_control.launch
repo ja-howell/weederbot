@@ -1,0 +1,4 @@
+<launch>
+  <node name="weedwacker_controller" pkg="weedwacker_control" type="weedwacker_controller.py"></node>
+</launch>
+
