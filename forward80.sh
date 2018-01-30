@@ -10,5 +10,5 @@ sudo iptables -A FORWARD -i br0 -o wlan0 -m conntrack --ctstate ESTABLISHED,RELA
 
 # Set up network address translation
 sudo iptables -t nat -A PREROUTING -i wlan0 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.13
-sudo iptables -t nat -A POSTROUTING -o br0 -p tcp --dport 80 -d 192.168.1.13 -j SNAT --to-source 192.168.0.16
+sudo iptables -t nat -A POSTROUTING -o br0 -p tcp --dport 80 -d 192.168.1.13 -j SNAT --to-source 192.168.1.100
 
