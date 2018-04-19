@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(husky_drive_grid)
+project(husky_marker_tracking)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+# add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  cv_bridge
+  image_transport
+  roscpp
+)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -100,8 +104,8 @@ find_package(catkin REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES husky_drive_grid
-#  CATKIN_DEPENDS other_catkin_pkg
+#  LIBRARIES husky_marker_tracking
+#  CATKIN_DEPENDS cv_bridge image_transport opencv2 roscpp
 #  DEPENDS system_lib
 )
 
@@ -111,18 +115,18 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
+
+find_package(OpenCV 2 REQUIRED)
+find_package(aruco REQUIRED)
 include_directories(
 # include
-# ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
-
-find_package(opencv)
-include_directories(${OpenCV_INCLUDE_DIRS})
-#target_link_libraries(my_awesome_library ${OpenCV_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/husky_drive_grid.cpp
+#   src/${PROJECT_NAME}/husky_marker_tracking.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -133,7 +137,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/husky_drive_grid_node.cpp)
+add_executable(${PROJECT_NAME} src/husky_marker_tracking.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -146,9 +150,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
+target_link_libraries(${PROJECT_NAME}
+   ${catkin_LIBRARIES}
+   ${OpenCV_LIBS}
+   ${aruco_LIBS}
+   ${ROS_LIBRARIES}
+ )
 
 #############
 ## Install ##
@@ -190,7 +197,7 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_husky_drive_grid.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_husky_marker_tracking.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
