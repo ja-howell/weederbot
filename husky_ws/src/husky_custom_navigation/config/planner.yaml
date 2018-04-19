@@ -1,16 +1,26 @@
 controller_frequency: 5.0
 recovery_behaviour_enabled: true
 
+GlobalPlanner:
+  allow_unknown: true
+  default_tolerance: 0.7
+  use_grid_path: true
+  use_dijkstra: false
+  use_quadratic: false
+
 NavfnROS:
   allow_unknown: true # Specifies whether or not to allow navfn to create plans that traverse unknown space.
-  default_tolerance: 0.1 # A tolerance on the goal point for the planner.
+  default_tolerance: 0.0 # A tolerance on the goal point for the planner.
+  use_grid_path: true
+  use_dijkstra: false
+  use_quadratic: false
 
 TrajectoryPlannerROS:
   # Robot Configuration Parameters
   acc_lim_x: 2.5
   acc_lim_theta:  3.2
 
-  max_vel_x: 1.0
+  max_vel_x: 2.0
   min_vel_x: 0.0
 
   max_vel_theta: 1.0
@@ -22,7 +32,7 @@ TrajectoryPlannerROS:
 
   # Goal Tolerance Parameters
   yaw_goal_tolerance: 0.1
-  xy_goal_tolerance: 0.2
+  xy_goal_tolerance: 0.3
   latch_xy_goal_tolerance: false
 
   # Forward Simulation Parameters
