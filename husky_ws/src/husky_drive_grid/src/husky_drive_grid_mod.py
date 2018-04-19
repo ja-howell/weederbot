@@ -149,7 +149,7 @@ if __name__ == '__main__':
     # setup ROS
     rospy.init_node("husky_drive_grid", anonymous=True)
     # setup listeners
-    rospy.Subscriber("weederbot/grid", RegionOfInterest, list_callback)
+    rospy.Subscriber("/weederbot/grid", RegionOfInterest, list_callback)
     rospy.Subscriber("/odometry/filtered", Odometry, odometry_callback)
     __CMD_VEL_PUBLISHER = rospy.Publisher('/platform_control/cmd_vel', Twist)
     rospy.spin()
