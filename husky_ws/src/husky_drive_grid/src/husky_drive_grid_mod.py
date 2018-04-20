@@ -50,7 +50,7 @@ def drive_forward(distance):
 
 def turn(clockwise):
     global __CMD_VEL_PUBLISHER, __ANGULAR_SPEED, __SLEEP_TIME, __CURRENT_POSE
-    angle = 1.54
+    angle = 1.5708
     vel_msg = Twist()
     vel_msg.linear.x=0
     vel_msg.linear.y=0

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+	<arg name="camera" default="camera" />
+	<node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+		<param name="use_inf" value="true" />
+		<param name="use_concurrency" value="true" />
+		<remap from="cloud_in" to="/camera/points2" />
+	</node>
+</launch>
