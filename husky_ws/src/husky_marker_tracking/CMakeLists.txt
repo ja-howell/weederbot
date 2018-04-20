@@ -118,7 +118,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 SET("OpenCV_DIR", "/opt/ros/indigo/include/opencv-3.1.0-dev/opencv2")
 SET("OpenCV_INCLUDE_DIRS", "/opt/ros/indigo/include/opencv-3.1.0-dev/opencv2")
-find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR} )
+find_package(OpenCV 3 REQUIRED PATHS ${OpenCV_DIR} )
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
