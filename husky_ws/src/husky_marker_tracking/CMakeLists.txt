@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   image_transport
   roscpp
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -103,9 +104,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+ INCLUDE_DIRS include
 #  LIBRARIES husky_marker_tracking
-#  CATKIN_DEPENDS cv_bridge image_transport opencv2 roscpp
+  CATKIN_DEPENDS cv_bridge image_transport roscpp
 #  DEPENDS system_lib
 )
 
@@ -115,19 +116,17 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-
-find_package(OpenCV 2 REQUIRED)
-find_package(aruco REQUIRED)
+SET("OpenCV_DIR", "/opt/ros/indigo/include/opencv-3.1.0-dev/opencv2")
+SET("OpenCV_INCLUDE_DIRS", "/opt/ros/indigo/include/opencv-3.1.0-dev/opencv2")
+find_package(OpenCV REQUIRED PATHS ${OpenCV_DIR} )
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/husky_marker_tracking.cpp
-# )
+ add_library(MyAruco src/aruco_detector.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -138,6 +137,7 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME} src/husky_marker_tracking.cpp)
+target_link_libraries(MyAruco ${OpenCV_LIBS} ${aruco_LIBS})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,10 +150,11 @@ add_executable(${PROJECT_NAME} src/husky_marker_tracking.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(
+   ${PROJECT_NAME}
+   MyAruco
    ${catkin_LIBRARIES}
    ${OpenCV_LIBS}
-   ${aruco_LIBS}
    ${ROS_LIBRARIES}
  )
 
