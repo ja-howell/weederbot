@@ -14,6 +14,9 @@
 #include <sensor_msgs/RegionOfInterest.h>
 #include <sensor_msgs/CameraInfo.h>
 
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+
 // Defines
 #define CONTROLLER_Y_BUTTON 1
 #define CONTROLLER_B_BUTTON 3
@@ -64,30 +67,30 @@ int main(int argc, char ** argv) {
         camera_axis_pub.publish(axis_msg);
 
         while(ros::ok()) {
-          float length = 0, width = 0;
+                float length = 0, width = 0;
                 if(enabled) {
-                  // Get the count of markers in the current camera view
-                  std::vector<int> markers_in_view = detector.markersInView(current_image);
-                  // if the count is greater than zero
-                  if(markers_in_view.size() > 0) {
-                    // Get the poses for the markers
-                    std::vector<tf::Transform> foundPoses = detector.getMarkerTransforms(current_image, CameraMatrix, DistortionMatrix, size);
-                    // Get the distance from the camera to the markers
-                    std::vector<tf::Transform> distances;
-                    for (size_t i = 0; i < foundPoses.size(); i++) {
-                      distances.push_back(foundPoses[i].inverseTimes(base_link_transform));
-                    }
-
-                    if(distances.size() == 1) {
-                      tf::Vector3 a = distances[0].getOrigin();
-                      length = a[0]; // Add Turn Around Length
-                    }else if(distances.size() == 2) {
-                      tf::Vector3 a = distances[0].getOrigin();
-                      length = a[0];
-                      tf::Vector3 b = distances[1].getOrigin();
-                      width = b[0];
-                    }
-                  }
+                        // // Get the count of markers in the current camera view
+                        // std::vector<int> markers_in_view = detector.markersInView(current_image);
+                        // // if the count is greater than zero
+                        // if(markers_in_view.size() > 0) {
+                        //         // Get the poses for the markers
+                        //         std::vector<tf::Transform> foundPoses = detector.getMarkerTransforms(current_image, CameraMatrix, DistortionMatrix, size);
+                        //         // Get the distance from the camera to the markers
+                        //         std::vector<tf::Transform> distances;
+                        //         for (size_t i = 0; i < foundPoses.size(); i++) {
+                        //                 distances.push_back(foundPoses[i].inverseTimes(base_link_transform));
+                        //         }
+                        //
+                        //         if(distances.size() == 1) {
+                        //                 tf::Vector3 a = distances[0].getOrigin();
+                        //                 length = a[0]; // Add Turn Around Length
+                        //         }else if(distances.size() == 2) {
+                        //                 tf::Vector3 a = distances[0].getOrigin();
+                        //                 length = a[0];
+                        //                 tf::Vector3 b = distances[1].getOrigin();
+                        //                 width = b[0];
+                        //         }
+                        // }
 
                 }
                 ros::spinOnce();
@@ -100,6 +103,7 @@ int main(int argc, char ** argv) {
 void joystickCallback(const sensor_msgs::Joy::ConstPtr& joymsg) {
         if(!enabled) {
                 if(joymsg->buttons[CONTROLLER_Y_BUTTON] == 1 && joymsg->buttons[CONTROLLER_B_BUTTON] == 1) {
+                        ROS_INFO("Mowing Enabled");
                         enabled = true;
                 }
         }
@@ -107,8 +111,7 @@ void joystickCallback(const sensor_msgs::Joy::ConstPtr& joymsg) {
 
 void imageCallback(const sensor_msgs::ImageConstPtr& imagemsg) {
         try {
-                cv_bridge::CvImagePtr img_ptr = cv_bridge::toCvCopy(imagemsg, "rgb8");
-                current_image = img_ptr->image;
+          current_image = cv_bridge::toCvShare(imagemsg, "bgr8")->image;
         }catch (cv_bridge::Exception& e) {
                 ROS_ERROR("cv_bridge exception: %s", e.what());
                 return;
@@ -116,18 +119,18 @@ void imageCallback(const sensor_msgs::ImageConstPtr& imagemsg) {
 }
 
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg) {
-  CameraMatrix = cv::Mat::zeros(3, 3, CV_64FC1);
-  DistortionMatrix = cv::Mat::zeros(4, 1, CV_64FC1);
-  size = cv::Size(camInfoMsg->height, camInfoMsg->width);
+        CameraMatrix = cv::Mat::zeros(3, 3, CV_64FC1);
+        DistortionMatrix = cv::Mat::zeros(4, 1, CV_64FC1);
+        size = cv::Size(camInfoMsg->height, camInfoMsg->width);
 
-  for (size_t i = 0; i < 9; ++i) {
-    CameraMatrix.at<double>(i%3, i-(i%3)*3) = camInfoMsg->K[i];
-  }
+        for (size_t i = 0; i < 9; ++i) {
+                CameraMatrix.at<double>(i%3, i-(i%3)*3) = camInfoMsg->K[i];
+        }
 
-  if(camInfoMsg->D.size() == 4) {
-    for (size_t i = 0; i < 4; ++i) {
-      DistortionMatrix.at<double>(i, 0) = camInfoMsg->D[i];
-    }
-  }
+        if(camInfoMsg->D.size() == 4) {
+                for (size_t i = 0; i < 4; ++i) {
+                        DistortionMatrix.at<double>(i, 0) = camInfoMsg->D[i];
+                }
+        }
 
 }
