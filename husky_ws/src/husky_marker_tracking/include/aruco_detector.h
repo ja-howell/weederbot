@@ -19,12 +19,22 @@
 #define ARUCO_DETECTOR_H
 class ArucoDetector {
 public:
-ArucoDetector(float marker_size, int marker_dictionary_id);
+ArucoDetector(float marker_size);
+tf::Transform arucoMarker2TransForm(const aruco::Marker &marker);
+bool cameraParamsAreSet();
+void setParams(aruco::CameraParameters params);
+std::vector<aruco::Marker> getMarkersInView(cv::Mat image);
 
 private:
 float marker_size;
-int marker_dictionary_id;
+bool has_camera_params = false;
+aruco::MarkerDetector detector;
+aruco::CameraParameters cameraParams;
 std::string reference_frame = "base_link";
 std::string camera_frame = "axis_base";
+tf::StampedTransform tf_to_base_link;
+geometry_msgs::Pose current_camera_pose;
+tf::Transform current_camera_tf;
+
 };
 #endif
