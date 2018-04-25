@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "ros/package.h"
+#include "camera_calibration_parsers/parse.h"
 #include <vector>
 #include <iostream>
 
@@ -49,6 +50,28 @@ void joystickCallback(const sensor_msgs::Joy::ConstPtr& joymsg);
 void imageCallback(const sensor_msgs::ImageConstPtr& imagemsg);
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg);
 void getCameraCalibration();
+string type2str(int type) {
+  string r;
+
+  uchar depth = type & CV_MAT_DEPTH_MASK;
+  uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+  switch ( depth ) {
+    case CV_8U:  r = "8U"; break;
+    case CV_8S:  r = "8S"; break;
+    case CV_16U: r = "16U"; break;
+    case CV_16S: r = "16S"; break;
+    case CV_32S: r = "32S"; break;
+    case CV_32F: r = "32F"; break;
+    case CV_64F: r = "64F"; break;
+    default:     r = "User"; break;
+  }
+
+  r += "C";
+  r += (chans+'0');
+
+  return r;
+}
 
 int main(int argc, char ** argv) {
         ROS_INFO("Waiting for Signal to start marker tracking");
@@ -61,9 +84,9 @@ int main(int argc, char ** argv) {
         roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>(WEEDERBOT_TOPIC, 1);
         camera_axis_pub = nh.advertise<axis_camera::Axis>(AXIS_COMMAND_TOPIC, 1);
         if(USE_AXIS_CAMERA_INTO_TOPIC) {
-          camera_info_sub = nh.subscribe<sensor_msgs::CameraInfo>(AXIS_CAMERA_INFO, 10, cameraInfoCallback);
+                camera_info_sub = nh.subscribe<sensor_msgs::CameraInfo>(AXIS_CAMERA_INFO, 10, cameraInfoCallback);
         }else {
-          getCameraCalibration();
+                getCameraCalibration();
         }
         controller_sub = nh.subscribe<sensor_msgs::Joy>(JOYSTICK_TOPIC, 10, joystickCallback);
         image_sub = transport.subscribe(AXIS_CAMERA_TOPIC, 1, imageCallback);
@@ -140,10 +163,38 @@ void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg) {
 }
 
 void getCameraCalibration() {
-  std::string path = ros::package::getPath("husky_marker_tracking");
-  path = path + "/config/axis_calibration.txt";
-  std::cout << path << std::endl;
-  aruco::CameraParameters params;
-  params.readFromFile(path);
-  detector.setParams(params);
+        std::string path = ros::package::getPath("husky_marker_tracking");
+        path = path + "/config/axis_calibration.yaml";
+        std::cout << path << std::endl;
+        sensor_msgs::CameraInfo camInfo;
+        std::string camName;
+        bool read = camera_calibration_parsers::readCalibration(path, camName, camInfo);
+        if(read) {
+                std::cout << read << std::endl;
+                CameraMatrix = cv::Mat::zeros(3, 3, CV_32FC1);
+                DistortionMatrix = cv::Mat::zeros(4, 1, CV_32FC1);
+                size = cv::Size(camInfo.height, camInfo.width);
+
+                for (size_t i = 0; i < 9; ++i) {
+                        CameraMatrix.at<double>(i%3, i-(i%3)*3) = camInfo.K[i];
+                }
+
+                for (size_t i = 0; i < 4; ++i) {
+                        DistortionMatrix.at<double>(i, 0) = camInfo.D[i];
+                }
+                std::cout << CameraMatrix << std::endl;
+                std::cout << DistortionMatrix << std::endl;
+                std::cout << size << std::endl;
+                std::cout << type2str(DistortionMatrix.type()) << std::endl;
+                try {
+                  aruco::CameraParameters params(CameraMatrix, DistortionMatrix, size);
+                }catch(cv::Exception& e) {
+                  std::cerr << e.what() << std::endl;
+                }
+                // params.setParams(CameraMatrix, DistortionMatrix, size);
+                detector.setParams(params);
+        }else {
+                ROS_ERROR("Unable to read camera calibration file");
+                exit(1);
+        }
 }

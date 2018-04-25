@@ -10,7 +10,9 @@ find_package(catkin REQUIRED COMPONENTS
              image_transport
              cv_bridge
              tf
-             aruco)
+             aruco
+             camera_calibration_parsers
+             )
 
 include_directories(${catkin_INCLUDE_DIRS}
                     ${PROJECT_SOURCE_DIR}/include/)
