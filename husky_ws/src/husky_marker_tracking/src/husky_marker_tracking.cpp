@@ -1,4 +1,5 @@
 #include "ros/ros.h"
+#include "ros/package.h"
 #include <vector>
 #include <iostream>
 
@@ -20,6 +21,12 @@
 // Defines
 #define CONTROLLER_Y_BUTTON 1
 #define CONTROLLER_B_BUTTON 3
+#define WEEDERBOT_TOPIC "/weederbot/grid"
+#define AXIS_COMMAND_TOPIC "/axis/cmd"
+#define AXIS_CAMERA_INFO "/axis/camera_info"
+#define JOYSTICK_TOPIC "/joy_teleop/joy"
+#define AXIS_CAMERA_TOPIC "/axis/image_raw_out"
+#define USE_AXIS_CAMERA_INTO_TOPIC false
 // Globals
 cv::Mat current_image;
 cv::Mat CameraMatrix;
@@ -41,6 +48,7 @@ ArucoDetector detector(marker_size);
 void joystickCallback(const sensor_msgs::Joy::ConstPtr& joymsg);
 void imageCallback(const sensor_msgs::ImageConstPtr& imagemsg);
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg);
+void getCameraCalibration();
 
 int main(int argc, char ** argv) {
         ROS_INFO("Waiting for Signal to start marker tracking");
@@ -50,11 +58,15 @@ int main(int argc, char ** argv) {
         image_transport::ImageTransport transport(nh);
 
         // Publishers and Subscribers
-        roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>("/weederbot/grid", 1);
-        camera_axis_pub = nh.advertise<axis_camera::Axis>("/axis/cmd", 1);
-        camera_info_sub = nh.subscribe<sensor_msgs::CameraInfo>("/axis/camerainfo", 10, cameraInfoCallback);
-        controller_sub = nh.subscribe<sensor_msgs::Joy>("/joy_teleop/joy", 10, joystickCallback);
-        image_sub = transport.subscribe("/axis/image_raw_out", 1, imageCallback);
+        roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>(WEEDERBOT_TOPIC, 1);
+        camera_axis_pub = nh.advertise<axis_camera::Axis>(AXIS_COMMAND_TOPIC, 1);
+        if(USE_AXIS_CAMERA_INTO_TOPIC) {
+          camera_info_sub = nh.subscribe<sensor_msgs::CameraInfo>(AXIS_CAMERA_INFO, 10, cameraInfoCallback);
+        }else {
+          getCameraCalibration();
+        }
+        controller_sub = nh.subscribe<sensor_msgs::Joy>(JOYSTICK_TOPIC, 10, joystickCallback);
+        image_sub = transport.subscribe(AXIS_CAMERA_TOPIC, 1, imageCallback);
 
         // axis msgs
         axis_camera::Axis axis_msg;
@@ -73,6 +85,7 @@ int main(int argc, char ** argv) {
                 if(enabled && detector.cameraParamsAreSet()) {
                         // Get the Markers
                         std::vector<aruco::Marker> markers = detector.getMarkersInView(current_image);
+                        ROS_INFO(markers.size() + " markers detected");
                         // Get the 'First' Marker
                         aruco::Marker marker = markers[0];
                         // Get the marker pose
@@ -124,4 +137,13 @@ void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg) {
         params.setParams(CameraMatrix, DistortionMatrix, size);
 
 
+}
+
+void getCameraCalibration() {
+  std::string path = ros::package::getPath("husky_marker_tracking");
+  path = path + "/config/axis_calibration.txt";
+  std::cout << path << std::endl;
+  aruco::CameraParameters params;
+  params.readFromFile(path);
+  detector.setParams(params);
 }
