@@ -44,7 +44,7 @@ void ArucoDetector::setParams(cv::Mat CameraMatrix, cv::Mat DistortionMatrix, cv
         this->CameraMatrix = CameraMatrix;
         this->DistortionMatrix = DistortionMatrix;
         this->size = size;
-        // this->has_camera_params = true;
+        this->has_camera_params = true;
 }
 
 std::vector<Marker> ArucoDetector::getMarkersInView(cv::Mat image) {
