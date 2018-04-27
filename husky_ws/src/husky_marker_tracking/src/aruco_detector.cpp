@@ -4,7 +4,7 @@ ArucoDetector::ArucoDetector(float marker_size) {
         this->marker_size = marker_size;
         this->dictionary = cv::aruco::getPredefinedDictionary(
                 cv::aruco::PREDEFINED_DICTIONARY_NAME(0));
-        this->detectorParams = cv::aruco::DetectorParameters();
+        this->detectorParams = cv::aruco::DetectorParameters::create();
 }
 
 tf::Transform ArucoDetector::arucoMarker2TransForm(const Marker &marker) {

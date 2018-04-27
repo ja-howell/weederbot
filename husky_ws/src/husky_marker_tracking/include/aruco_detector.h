@@ -47,7 +47,7 @@ tf::Transform current_camera_tf;
 cv::Mat CameraMatrix;
 cv::Mat DistortionMatrix;
 cv::Size size;
-cv::aruco::Dictionary dictionary;
-cv::aruco::DetectorParameters detectorParams;
+cv::Ptr<cv::aruco::Dictionary> dictionary;
+cv::Ptr<cv::aruco::DetectorParameters> detectorParams;
 };
 #endif
