@@ -3,6 +3,7 @@
 #include "camera_calibration_parsers/parse.h"
 #include <vector>
 #include <iostream>
+#include <string>
 
 // Aruco Detector
 #include "aruco_detector.h"
@@ -46,32 +47,10 @@ const int marker_dictionary_id = 0;
 // Aruco Detector
 ArucoDetector detector(marker_size);
 
+void getCameraCalibration();
 void joystickCallback(const sensor_msgs::Joy::ConstPtr& joymsg);
 void imageCallback(const sensor_msgs::ImageConstPtr& imagemsg);
 void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg);
-void getCameraCalibration();
-string type2str(int type) {
-  string r;
-
-  uchar depth = type & CV_MAT_DEPTH_MASK;
-  uchar chans = 1 + (type >> CV_CN_SHIFT);
-
-  switch ( depth ) {
-    case CV_8U:  r = "8U"; break;
-    case CV_8S:  r = "8S"; break;
-    case CV_16U: r = "16U"; break;
-    case CV_16S: r = "16S"; break;
-    case CV_32S: r = "32S"; break;
-    case CV_32F: r = "32F"; break;
-    case CV_64F: r = "64F"; break;
-    default:     r = "User"; break;
-  }
-
-  r += "C";
-  r += (chans+'0');
-
-  return r;
-}
 
 int main(int argc, char ** argv) {
         ROS_INFO("Waiting for Signal to start marker tracking");
@@ -107,10 +86,10 @@ int main(int argc, char ** argv) {
                 float length = 0, width = 0;
                 if(enabled && detector.cameraParamsAreSet()) {
                         // Get the Markers
-                        std::vector<aruco::Marker> markers = detector.getMarkersInView(current_image);
+                        std::vector<Marker> markers = detector.getMarkersInView(current_image);
                         ROS_INFO(markers.size() + " markers detected");
                         // Get the 'First' Marker
-                        aruco::Marker marker = markers[0];
+                        Marker marker = markers[0];
                         // Get the marker pose
                         tf::Transform marker_transform = detector.arucoMarker2TransForm(marker);
                         // Publish the Marker Pose
@@ -155,11 +134,7 @@ void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& camInfoMsg) {
                         DistortionMatrix.at<double>(i, 0) = camInfoMsg->D[i];
                 }
         }
-
-        aruco::CameraParameters params;
-        params.setParams(CameraMatrix, DistortionMatrix, size);
-
-
+        detector.setParams(CameraMatrix, DistortionMatrix, size);
 }
 
 void getCameraCalibration() {
@@ -182,17 +157,8 @@ void getCameraCalibration() {
                 for (size_t i = 0; i < 4; ++i) {
                         DistortionMatrix.at<double>(i, 0) = camInfo.D[i];
                 }
-                std::cout << CameraMatrix << std::endl;
-                std::cout << DistortionMatrix << std::endl;
-                std::cout << size << std::endl;
-                std::cout << type2str(DistortionMatrix.type()) << std::endl;
-                try {
-                  aruco::CameraParameters params(CameraMatrix, DistortionMatrix, size);
-                }catch(cv::Exception& e) {
-                  std::cerr << e.what() << std::endl;
-                }
-                // params.setParams(CameraMatrix, DistortionMatrix, size);
-                detector.setParams(params);
+
+                detector.setParams(CameraMatrix, DistortionMatrix, size);
         }else {
                 ROS_ERROR("Unable to read camera calibration file");
                 exit(1);

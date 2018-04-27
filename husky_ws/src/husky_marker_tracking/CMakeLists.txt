@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(husky_marker_tracking)
 
-find_package(OpenCV REQUIRED)
+SET("OpenCV_DIR" "/opt/opencv3")
+
+find_package(OpenCV 3 REQUIRED PATHS "/opt/opencv3")
 find_package(aruco REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
